@@ -93,7 +93,7 @@ Tendo em conta os dados do problema, começamos por definir uma função no R qu
 
 # para todas as situações, o valor inicial será zero
 
-tst_random_walk <- function(N = 2000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
+tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
     set.seed(42)
     x <- numeric(N) # vector de zeros, de dimensão N
     x[1] <- start # definimos valor inicial no vector; valor fixo
@@ -111,11 +111,38 @@ tst_random_walk <- function(N = 2000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
             x[i] <- x[i - 1]
         }
     }
-    par(mfrow = c(1, 2))
+    
+    par(mfrow = c(1, 1))
+
+    acf(x)
+
+    refline <- qt(c(.01, .99), df = v)
+
+    
+    plot(x[1:500], type = "l")
+    abline(h = refline, lty=2, col="red")
+    plot(c(501:1000), x[501:1000], type = "l")
+    abline(h = refline, lty=2, col="red")
+
     plot(x, type = "l")
+    abline(h = refline, lty=2, col="red")
+    
+    # manter só os npa gerados depois do Burn in
+    from <- length(x)-2000
+    to <- length(x)
+    x <- x[from:to]
+    
+    plot(x, type = "l")
+    abline(h = refline, lty=2, col="red")
+
+    plot(c(1501:2000), x[1501:2000], type = "l")
+    abline(h = refline, lty=2, col="red")
+    
+
     print("Taxa de aceitação: ")
     print(k / N)
-    plot(ecdf(x), main = bquote(delta==.(sigma_g)))
+    par(mfrow = c(1, 3))
+    plot(ecdf(x), main = bquote(sigma==.(sigma_g)))
     curve(pt(x, v), add = TRUE, col = "red")
     
     

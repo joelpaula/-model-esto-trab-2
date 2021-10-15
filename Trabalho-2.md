@@ -92,7 +92,7 @@ Tendo em conta os dados do problema, começamos por definir uma função no R qu
 
 # para todas as situações, o valor inicial será zero
 
-tst_random_walk <- function(N = 2000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
+tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
     set.seed(42)
     x <- numeric(N) # vector de zeros, de dimensão N
     x[1] <- start # definimos valor inicial no vector; valor fixo
@@ -110,11 +110,38 @@ tst_random_walk <- function(N = 2000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
             x[i] <- x[i - 1]
         }
     }
-    par(mfrow = c(1, 2))
+    
+    par(mfrow = c(1, 1))
+
+    acf(x)
+
+    refline <- qt(c(.01, .99), df = v)
+
+    
+    plot(x[1:500], type = "l")
+    abline(h = refline, lty=2, col="red")
+    plot(c(501:1000), x[501:1000], type = "l")
+    abline(h = refline, lty=2, col="red")
+
     plot(x, type = "l")
+    abline(h = refline, lty=2, col="red")
+    
+    # manter só os npa gerados depois do Burn in
+    from <- length(x)-2000
+    to <- length(x)
+    x <- x[from:to]
+    
+    plot(x, type = "l")
+    abline(h = refline, lty=2, col="red")
+
+    plot(c(1501:2000), x[1501:2000], type = "l")
+    abline(h = refline, lty=2, col="red")
+    
+
     print("Taxa de aceitação: ")
     print(k / N)
-    plot(ecdf(x), main = bquote(delta==.(sigma_g)))
+    par(mfrow = c(1, 3))
+    plot(ecdf(x), main = bquote(sigma==.(sigma_g)))
     curve(pt(x, v), add = TRUE, col = "red")
     
     
@@ -132,16 +159,18 @@ Procedemos então à geração de 2000 NPA de uma distribuição t-Student, com 
 tst_random_walk()
 ```
 
+![](Trabalho-2_files/figure-html/unnamed-chunk-3-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-6.png)<!-- -->
+
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.7365
+## [1] 0.7356667
 ```
 
 ```
 ## Warning in qt(x, v): NaNs produced
 ```
 
-![](Trabalho-2_files/figure-html/unnamed-chunk-3-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-2.png)<!-- -->
+![](Trabalho-2_files/figure-html/unnamed-chunk-3-7.png)<!-- -->
 
 Implementamos a mesma função anterior, mas desta vez para simular uma situação em que a distribuição candidata é uma Normal(0, 0.5):
 
@@ -149,16 +178,18 @@ Implementamos a mesma função anterior, mas desta vez para simular uma situaç�
 tst_random_walk(sigma_g = 0.5)
 ```
 
+![](Trabalho-2_files/figure-html/unnamed-chunk-4-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-6.png)<!-- -->
+
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.859
+## [1] 0.8586667
 ```
 
 ```
 ## Warning in qt(x, v): NaNs produced
 ```
 
-![](Trabalho-2_files/figure-html/unnamed-chunk-4-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-2.png)<!-- -->
+![](Trabalho-2_files/figure-html/unnamed-chunk-4-7.png)<!-- -->
 
 
 ... e para simular uma situação em que a distribuição candidata é uma Normal(0, 2):
@@ -167,16 +198,18 @@ tst_random_walk(sigma_g = 0.5)
 tst_random_walk(sigma_g = 2)
 ```
 
+![](Trabalho-2_files/figure-html/unnamed-chunk-5-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-5-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-5-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-5-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-5-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-5-6.png)<!-- -->
+
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.5265
+## [1] 0.5313333
 ```
 
 ```
 ## Warning in qt(x, v): NaNs produced
 ```
 
-![](Trabalho-2_files/figure-html/unnamed-chunk-5-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-5-2.png)<!-- -->
+![](Trabalho-2_files/figure-html/unnamed-chunk-5-7.png)<!-- -->
 
 ... e para simular uma situação em que a distribuição candidata é uma Normal(0, 10):
 
@@ -184,16 +217,18 @@ tst_random_walk(sigma_g = 2)
 tst_random_walk(sigma_g = 10)
 ```
 
+![](Trabalho-2_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-6.png)<!-- -->
+
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.147
+## [1] 0.1476667
 ```
 
 ```
 ## Warning in qt(x, v): NaNs produced
 ```
 
-![](Trabalho-2_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-2.png)<!-- -->
+![](Trabalho-2_files/figure-html/unnamed-chunk-6-7.png)<!-- -->
 
 # TODO: comparar as distribuições empíricas com as respectivas teóricas
 # TODO: decidir e justificar qual a melhor distribuição candidata
