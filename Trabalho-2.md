@@ -17,9 +17,13 @@ header-includes:
   - \pretitle{\par\vspace{50mm}\begin{center}
   - \posttitle{\par\vspace{100mm}\end{center}}
     \includegraphics[width=2in,height=2in]{rgb_iscte_pt_horizontal_positive.png}\LARGE\\}
+editor_options: 
+  markdown: 
+    wrap: 120
 ---
 
 <!-- get the required files from 3rd party sources -->
+
 <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'> <!-- use the font -->
 
 ```{=html}
@@ -35,29 +39,34 @@ header-includes:
 
 # Problema:
 
-Pretende-se gerar 2000 números de uma distribuição t de Student com 4 graus de liberdade via um 
-passeio aleatório. Considere como distribuição candidata a distribuição normal padrão, assim como, 
-a possibilidade de admitir diferentes valores para o seu desvio-padrão, como por exemplo 0.5 e 2.
-Considere, para cada uma das situações anteriores, o valor inicial igual a 0.
+Pretende-se gerar 2000 números de uma distribuição t de Student com 4 graus de liberdade via um passeio aleatório.
+Considere como distribuição candidata a distribuição normal padrão, assim como, a possibilidade de admitir diferentes
+valores para o seu desvio-padrão, como por exemplo 0.5 e 2. Considere, para cada uma das situações anteriores, o valor
+inicial igual a 0.
 
-Implemente o algoritmo em R e compare, para cada uma das situações, a distribuição empírica dos 
-valores gerados com a distribuição teórica. Decida por uma distribuição candidata.
+Implemente o algoritmo em R e compare, para cada uma das situações, a distribuição empírica dos valores gerados com a
+distribuição teórica. Decida por uma distribuição candidata.
 
-Para a distribuição candidata escolhida, avalie diferentes porções da cadeia e deite fora as p primeiras 
-observações do passeio aleatório que lhe pareçam que não possuem a distribuição alvo. 
+Para a distribuição candidata escolhida, avalie diferentes porções da cadeia e deite fora as p primeiras observações do
+passeio aleatório que lhe pareçam que não possuem a distribuição alvo.
 
 Interprete todos os resultados obtidos.
 
 # Resolução:
 
-Considerando as curvas de distribuição da função alvo e das normais candidatas:
+Começamos por fazer uma representação das curvas teóricas que no fundo nos servirão de base para a análise da eficácia
+dos cenários de simulação mais abaixo.
+
+No gráfico, podemos perceber que a curva candidata que mais se aproxima da nossa curva alvo, a t-Student com 4 graus de
+liberdade, é a Normal padrão. Se esta será de facto a melhor distribuição candidata para gerar NPA com uma distribuição
+T (4) ou não usando o algoritmo Metropolis Random Walk, será analisado mais à frente.
+
 
 ```r
-# os NPA seguem uma distribuição t de Student com 4 graus de liberdade, T(v=4):
+# distribuição alvo t-student com 4 graus de liberdade, T(v=4):
 f <- function(x, v = 4) {
     dt(x, df = v)
-} # distribuição principal; para cada valor gerado com a N(0,sigma), será criada uma T(4) # nolint
-#v <- 4 # parâmetro v da t-Student, valor fixo # nolint
+} # distribuição alvo; 
 
 # colors
 cols <- c("gray40", "dodgerblue3", "firebrick2", "darkgoldenrod2")
@@ -74,7 +83,38 @@ legend("topright",
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
 
-Tendo em conta os dados do problema, começamos por definir uma função no R que nos permita automatizar o processo de simulação de NPA, bastando mais à frente editar os parâmetros necessários para comparar e analisar os diferentes cenários.
+Na tradução do algoritmo *Metropolis Random Walk* para o código R vamos replicar os seguintes passos essenciais:
+
+1.  definição de um vetor em que armazenaremos os valores de x gerados para a cadeia;
+
+2.  estabelecer o primeiro valor da cadeia como sendo zero, de acordo com o solicitado no enunciado;
+
+3.  Ciclo com o número de iterações igual ao número de NPA que queremos gerar menos 1, que já está definido como zero,
+    composto por:
+
+    1.  a definição de um valor para o incremento $z$ (que segue uma distribuição Normal com uma média de zero e um
+        desvio-padrão parametrizado em cada cenário);
+    2.  a definição de um valor de $y$ candidato (a partir da fórmula $y = x_{[i-1]} + z)$;
+    3.  e a definição do critério de aceitação/rejeição do $y$ gerado (geramos um NPA com distribuição $U (0,1)$; se
+        este NPA for inferior ou igual ao critério $\alpha$ definido $min(\frac{f(y,v)}{f(x_{[i - 1]},v)},1)$, o próximo
+        valor de $x$ na cadeia será o valor de $y$ gerado, caso contrário corresponderá ao $x$ anterior;
+    4.  por fim incluímos no algoritmo uma fórmula para o cálculo da taxa de aceitação dos NPA gerados, que servirá para
+        análise de eficiência da função candidata.
+
+Por uma questão prática, decidimos englobar o algoritmo numa função em R, permitindo-nos facilmente escolher os
+parâmetros em cada cenário (dimensão da cadeia, o parâmetro da distribuição alvo - graus de liberdade -, os parâmetros
+da distribuição candidata - média e desvio-padrão ‑, e o valor inicial da cadeia).
+
+Para percebermos quais os valores do desvio-padrão da distribuição candidata se poderão adequar mais à geração de NPA
+para a distribuição t-Student, serão simulados cenários em que este parâmetro será diferente. E para cada um deles será
+importante perceber: qual a taxa de aceitação dos valores de $y$ gerados; quanto tempo a cadeia demora a convergir para
+a distribuição estacionária (no fundo, qual a dimensão da fase de *burn-in*); quanto tempo a cadeia demora a percorrer
+toda a amplitude dos valores de $x$ possíveis; qual os "níveis" de autocorrelação existentes entre os valores da cadeia
+gerada; e qual a semelhança da distribuição dos valores gerados com a distribuição teórica.
+
+Apesar de o número de NPA desejado ser de 2000, para cada um dos amostradores iremos definir um $N$ (NPA gerados)
+superior, no sentido de dar "espaço de manobra" para *o burn-in*/aquecimento. Os NPA considerados deverão ser os últimos
+2000 obtidos com cada amostrador.
 
 
 ```r
@@ -140,7 +180,7 @@ tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
 
     print("Taxa de aceitação: ")
     print(k / N)
-    par(mfrow = c(1, 3))
+    par(mfrow = c(1, 3), mar= c(5, 4, 12, 1))
     plot(ecdf(x), main = bquote(sigma==.(sigma_g)))
     curve(pt(x, v), add = TRUE, col = "red")
     
@@ -148,12 +188,15 @@ tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
     qqplot(qt(x, v), x, main="", xlab=bquote("Quantis T-"~.(v)), ylab="Quantis Amostrais")
     abline(0, 1,col="red")
     
-    hist(x, main="", xlab="", freq=FALSE, ylim=c(0,0.5))
+    hist(x, main="", xlab="", ylab="Densidade", freq=FALSE, ylim=c(0,0.5))
     curve(f, -10, 10, add = T, col="red")
 }
 ```
 
-Procedemos então à geração de 2000 NPA de uma distribuição t-Student, com 4 graus de liberdade, via uma random walk, em que a distribuição candidata é uma Normal(0,1) e comparamos os resultados com aqueles da respectiva distribuição teórica:
+## $N (0, 0.5)$
+
+Comecemos então com o primeiro cenário, em que a distribuição candidata é uma Normal $N (0, 0.5)$.
+
 
 ```r
 tst_random_walk()
@@ -172,7 +215,20 @@ tst_random_walk()
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-3-7.png)<!-- -->
 
-Implementamos a mesma função anterior, mas desta vez para simular uma situação em que a distribuição candidata é uma Normal(0, 0.5):
+-   Taxa de aceitação: 0.8586667
+
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que *lag* existem elevados níveis para autocorrelação: *lag* 20
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## $N (0, 1)$
+
+Analisemos agora o cenário em que temos como distribuição candidata uma Normal $N (0, 1)$.
+
 
 ```r
 tst_random_walk(sigma_g = 0.5)
@@ -191,8 +247,20 @@ tst_random_walk(sigma_g = 0.5)
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-4-7.png)<!-- -->
 
+-   Taxa de aceitação: 0.7356667
 
-... e para simular uma situação em que a distribuição candidata é uma Normal(0, 2):
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que *lag* existem elevados níveis para autocorrelação: *lag* 15
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## $N (0, 2)$
+
+No terceiro cenário, temos como distribuição candidata uma Normal $N(0, 2)$.
+
 
 ```r
 tst_random_walk(sigma_g = 2)
@@ -211,17 +279,31 @@ tst_random_walk(sigma_g = 2)
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-5-7.png)<!-- -->
 
-... e para simular uma situação em que a distribuição candidata é uma Normal(0, 10):
+-   Taxa de aceitação: 0.5313333
+
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que lag existem elevados níveis para autocorrelação: lag 13
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## $N (0, 20)$
+
+Por fim, temos o caso em que o amostrador tem como distribuição candidata uma Normal com desvio padrão bastante superior
+àqueles observados nos cenários anteriores, $N(0,20)$.
+
 
 ```r
-tst_random_walk(sigma_g = 10)
+tst_random_walk(sigma_g = 20)
 ```
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-6.png)<!-- -->
 
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.1476667
+## [1] 0.072
 ```
 
 ```
@@ -230,6 +312,32 @@ tst_random_walk(sigma_g = 10)
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-6-7.png)<!-- -->
 
-# TODO: comparar as distribuições empíricas com as respectivas teóricas
-# TODO: decidir e justificar qual a melhor distribuição candidata
-# TODO: Para a distribuição candidata escolhida, avalie diferentes porções da cadeia e deite fora as p primeiras observações do passeio aleatório que lhe pareçam que não possuem a distribuição alvo. Interprete todos os resultados obtidos.
+-   Taxa de aceitação: 0.072
+
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que *lag* existem elevados níveis para autocorrelação : *lag* 16
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## Conclusões: TODO
+
+- qual o melhor amostrador e porquê;
+
+- retirar os primeiros valores p que não parecem fazer parte da distribuição alvo
+
+- o que acontece à taxa de aceitação quando o desvio padrão é aumentado;
+
+- o que acontece ao tempo até à convergência quando o desvio padrão é aumentado;
+
+- o que acontece ao tempo até percorrer toda a amplitude de x quando o desvio padrão é aumentado;
+
+- (?) o que acontece ao número de lags a partir do qual deixa de existir autocorrelação quando o desvio padrão é aumentado;
+
+- o que acontece à semelhança com a distribuição teórica quando o desvio padrão é aumentado;
+
+- propriedades das cadeias de Markov que são verificáveis
+
+- cadeias de Markov convergem para o valor esperado (neste caso, a média das Normais candidatas)
