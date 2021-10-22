@@ -1,11 +1,11 @@
 ---
-title: "Modelação Estocástica - Trabalho 1"
+title: "Modelação Estocástica - Trabalho 2"
 subtitle: 'Ciência de Dados - PL - 3º ano| Professora: Catarina Marques'
 author: 
 - Catarina Castanheira, 92478
 - João Martins, 93259
 - Joel Paula, 93392
-date: "15/10/2021"
+date: "22/10/2021"
 output:
   html_document: 
     keep_md: yes
@@ -71,6 +71,10 @@ f <- function(x, v = 4) {
     dt(x, df = v)
 } # distribuição alvo; 
 
+g <- function(x, mean_g, sigma_g) { 
+  dnorm(x, mean = mean_g, sd = sigma_g) 
+}
+ 
 # colors
 cols <- c("gray40", "dodgerblue3", "firebrick2", "darkgoldenrod2")
 # Gráfico com as curvas de densidade sobrepostas:
@@ -133,11 +137,12 @@ superior, no sentido de dar "espaço de manobra" para *o burn-in*/aquecimento. O
 
 # para todas as situações, o valor inicial será zero
 
-tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
+tst_random_walk <- function(N = 50000, v=4, mean_g = 0, sigma_g = 1, start = 0, every_nth=1) {
     set.seed(42)
     x <- numeric(N) # vector de zeros, de dimensão N
     x[1] <- start # definimos valor inicial no vector; valor fixo
     k <- 0
+   
     for (i in 2:N) {
         # geração de um NPA de acordo com a distribuição candidata # nolint
         z <- rnorm(n = 1, mean_g, sigma_g) 
@@ -154,7 +159,6 @@ tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
     
     par(mfrow = c(1, 1))
 
-    acf(x)
 
     refline <- qt(c(.01, .99), df = v)
 
@@ -167,10 +171,14 @@ tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
     plot(x, type = "l")
     abline(h = refline, lty=2, col="red")
     
+    # tentar ir buscar só de nth em nth, para superar a autocorrelação
+    x <- x[seq(1, length(x), every_nth)]
     # manter só os npa gerados depois do Burn in
     from <- length(x)-2000
     to <- length(x)
     x <- x[from:to]
+    
+    acf(x, lag.max = 50)
     
     plot(x, type = "l")
     abline(h = refline, lty=2, col="red")
@@ -199,7 +207,7 @@ tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
 Comecemos então com o primeiro cenário, em que a distribuição candidata é uma Normal $N (0, 0.5)$.
 
 ```{r}
-tst_random_walk()
+tst_random_walk(sigma_g = 0.5)
 
 ```
 
@@ -218,7 +226,7 @@ tst_random_walk()
 Analisemos agora o cenário em que temos como distribuição candidata uma Normal $N (0, 1)$.
 
 ```{r}
-tst_random_walk(sigma_g = 0.5)
+tst_random_walk(sigma_g = 1)
 
 ```
 
@@ -251,17 +259,56 @@ tst_random_walk(sigma_g = 2)
 
 -   Semelhança dos valores gerados com a distribuição teórica: TODO
 
-## $N (0, 20)$
+## $N (0, 4)$
 
 Por fim, temos o caso em que o amostrador tem como distribuição candidata uma Normal com desvio padrão bastante superior
-àqueles observados nos cenários anteriores, $N(0,20)$.
+àqueles observados nos cenários anteriores, $N(0,4)$.
 
 ```{r}
-tst_random_walk(sigma_g = 20)
+tst_random_walk(sigma_g = 4)
 
 ```
 
--   Taxa de aceitação: 0.072
+-   Taxa de aceitação: 0.33562
+
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que *lag* existem elevados níveis para autocorrelação : *lag* 16
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## $N (0, 4)$ aproveitando cada 10º valor gerado
+
+Por fim, temos o caso em que o amostrador tem como distribuição candidata uma Normal com desvio padrão bastante superior
+àqueles observados nos cenários anteriores, $N(0,4)$.
+
+```{r}
+tst_random_walk(sigma_g = 4, every_nth = 10)
+```
+
+-   Taxa de aceitação: 0.33562
+
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que *lag* existem elevados níveis para autocorrelação : *lag* 16
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## $N (0, 10)$
+
+Por fim, temos o caso em que o amostrador tem como distribuição candidata uma Normal com desvio padrão bastante superior
+àqueles observados nos cenários anteriores, $N(0,10)$.
+
+```{r}
+tst_random_walk(sigma_g = 10)
+
+```
+
+-   Taxa de aceitação: 0.154
 
 -   Tempo até convergência: TODO
 

@@ -1,11 +1,11 @@
 ---
-title: "Modelação Estocástica - Trabalho 1"
+title: "Modelação Estocástica - Trabalho 2"
 subtitle: 'Ciência de Dados - PL - 3º ano| Professora: Catarina Marques'
 author: 
 - Catarina Castanheira, 92478
 - João Martins, 93259
 - Joel Paula, 93392
-date: "15/10/2021"
+date: "22/10/2021"
 output:
   html_document: 
     keep_md: yes
@@ -68,6 +68,10 @@ f <- function(x, v = 4) {
     dt(x, df = v)
 } # distribuição alvo; 
 
+g <- function(x, mean_g, sigma_g) { 
+  dnorm(x, mean = mean_g, sd = sigma_g) 
+}
+ 
 # colors
 cols <- c("gray40", "dodgerblue3", "firebrick2", "darkgoldenrod2")
 # Gráfico com as curvas de densidade sobrepostas:
@@ -132,11 +136,12 @@ superior, no sentido de dar "espaço de manobra" para *o burn-in*/aquecimento. O
 
 # para todas as situações, o valor inicial será zero
 
-tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
+tst_random_walk <- function(N = 50000, v=4, mean_g = 0, sigma_g = 1, start = 0, every_nth=1) {
     set.seed(42)
     x <- numeric(N) # vector de zeros, de dimensão N
     x[1] <- start # definimos valor inicial no vector; valor fixo
     k <- 0
+   
     for (i in 2:N) {
         # geração de um NPA de acordo com a distribuição candidata # nolint
         z <- rnorm(n = 1, mean_g, sigma_g) 
@@ -153,8 +158,6 @@ tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
     
     par(mfrow = c(1, 1))
 
-    acf(x)
-
     refline <- qt(c(.01, .99), df = v)
 
     
@@ -166,10 +169,14 @@ tst_random_walk <- function(N = 3000, v=4, mean_g = 0, sigma_g = 1, start = 0) {
     plot(x, type = "l")
     abline(h = refline, lty=2, col="red")
     
+    # tentar ir buscar só de nth em nth, para superar a autocorrelação
+    x <- x[seq(1, length(x), every_nth)]
     # manter só os npa gerados depois do Burn in
     from <- length(x)-2000
     to <- length(x)
     x <- x[from:to]
+    
+    acf(x, lag.max = 50)
     
     plot(x, type = "l")
     abline(h = refline, lty=2, col="red")
@@ -199,14 +206,14 @@ Comecemos então com o primeiro cenário, em que a distribuição candidata é u
 
 
 ```r
-tst_random_walk()
+tst_random_walk(sigma_g = 0.5)
 ```
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-3-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-3-6.png)<!-- -->
 
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.7356667
+## [1] 0.85454
 ```
 
 ```
@@ -231,14 +238,14 @@ Analisemos agora o cenário em que temos como distribuição candidata uma Norma
 
 
 ```r
-tst_random_walk(sigma_g = 0.5)
+tst_random_walk(sigma_g = 1)
 ```
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-4-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-4-6.png)<!-- -->
 
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.8586667
+## [1] 0.72624
 ```
 
 ```
@@ -270,7 +277,7 @@ tst_random_walk(sigma_g = 2)
 
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.5313333
+## [1] 0.53606
 ```
 
 ```
@@ -289,21 +296,21 @@ tst_random_walk(sigma_g = 2)
 
 -   Semelhança dos valores gerados com a distribuição teórica: TODO
 
-## $N (0, 20)$
+## $N (0, 4)$
 
 Por fim, temos o caso em que o amostrador tem como distribuição candidata uma Normal com desvio padrão bastante superior
-àqueles observados nos cenários anteriores, $N(0,20)$.
+àqueles observados nos cenários anteriores, $N(0,4)$.
 
 
 ```r
-tst_random_walk(sigma_g = 20)
+tst_random_walk(sigma_g = 4)
 ```
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-6-6.png)<!-- -->
 
 ```
 ## [1] "Taxa de aceitação: "
-## [1] 0.072
+## [1] 0.33562
 ```
 
 ```
@@ -312,7 +319,73 @@ tst_random_walk(sigma_g = 20)
 
 ![](Trabalho-2_files/figure-html/unnamed-chunk-6-7.png)<!-- -->
 
--   Taxa de aceitação: 0.072
+-   Taxa de aceitação: 0.33562
+
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que *lag* existem elevados níveis para autocorrelação : *lag* 16
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## $N (0, 4)$ aproveitando cada 10º valor gerado
+
+Por fim, temos o caso em que o amostrador tem como distribuição candidata uma Normal com desvio padrão bastante superior
+àqueles observados nos cenários anteriores, $N(0,4)$.
+
+
+```r
+tst_random_walk(sigma_g = 4, every_nth = 10)
+```
+
+![](Trabalho-2_files/figure-html/unnamed-chunk-7-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-7-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-7-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-7-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-7-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-7-6.png)<!-- -->
+
+```
+## [1] "Taxa de aceitação: "
+## [1] 0.33562
+```
+
+```
+## Warning in qt(x, v): NaNs produced
+```
+
+![](Trabalho-2_files/figure-html/unnamed-chunk-7-7.png)<!-- -->
+
+-   Taxa de aceitação: 0.33562
+
+-   Tempo até convergência: TODO
+
+-   Tempo até percorrer toda a amplitude de $x$: TODO
+
+-   Até que *lag* existem elevados níveis para autocorrelação : *lag* 16
+
+-   Semelhança dos valores gerados com a distribuição teórica: TODO
+
+## $N (0, 10)$
+
+Por fim, temos o caso em que o amostrador tem como distribuição candidata uma Normal com desvio padrão bastante superior
+àqueles observados nos cenários anteriores, $N(0,10)$.
+
+
+```r
+tst_random_walk(sigma_g = 10)
+```
+
+![](Trabalho-2_files/figure-html/unnamed-chunk-8-1.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-8-2.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-8-3.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-8-4.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-8-5.png)<!-- -->![](Trabalho-2_files/figure-html/unnamed-chunk-8-6.png)<!-- -->
+
+```
+## [1] "Taxa de aceitação: "
+## [1] 0.15506
+```
+
+```
+## Warning in qt(x, v): NaNs produced
+```
+
+![](Trabalho-2_files/figure-html/unnamed-chunk-8-7.png)<!-- -->
+
+-   Taxa de aceitação: 0.154
 
 -   Tempo até convergência: TODO
 
